@@ -44,7 +44,7 @@ class MyApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
-      home: const Text("AuthGate Placeholder"), // const AuthGate()
+      home: const AuthGate(),
     );
   }
 }
@@ -55,10 +55,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Toilet Finder London'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Toilet Finder London')),
       body: const Center(
         child: Text('Welcome! Map & toilets will appear here.'),
       ),
@@ -184,6 +181,14 @@ class _SignInScreenState extends State<SignInScreen> {
                 context,
               ).push(MaterialPageRoute(builder: (_) => const SignUpScreen())),
               child: const Text('Create account'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (_) => const HomeScreen()));
+              },
+              child: const Text("Continue as Guest"),
             ),
           ],
         ),
