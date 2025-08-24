@@ -1,0 +1,66 @@
+name: flutter_toilet_finder_mvp
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.8.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # UI Components
+  cupertino_icons: ^1.0.8
+  google_fonts: ^6.1.0
+  flutter_rating_bar: ^4.0.1
+  shimmer: ^3.0.0
+  cached_network_image: ^3.3.1
+  flutter_svg: ^2.2.0  # updated
+  vector_graphics_codec: ^1.1.13  # from logs
+  vector_graphics_compiler: ^1.1.18  # from logs
+
+  # Backend and State Management
+  supabase_flutter: ^2.6.0
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.4.9
+  hydrated_bloc: ^9.1.5  # updated
+
+  # Configuration
+  flutter_dotenv: ^5.1.0
+  intl: ^0.19.0  # you can choose ^0.20.2 if desired
+
+  # Maps & Geo
+  flutter_map: ^8.2.1
+  latlong2: ^0.9.0
+  geolocator: ^14.0.2
+  location: ^5.0.3  # updated
+
+  # Utils
+  uuid: ^4.3.3
+  path_provider: ^2.1.2
+  shared_preferences: ^2.2.2
+  url_launcher: ^6.2.5
+  image_picker: ^1.0.7
+  image: ^4.1.7
+  flutter_image_compress: ^2.0.3
+
+  # Authentication
+  google_sign_in: ^6.3.0  # updated
+  sign_in_with_apple: ^6.1.4  # updated
+
+  # Forms and Validation
+  form_validator: ^2.1.1  # latest valid version :contentReference[oaicite:1]{index=1}
+  intl_phone_field: ^3.2.0
+
+  # Animations
+  lottie: ^3.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  build_runner: ^2.5.4
+  riverpod_generator: ^2.4.9
+  mocktail: ^1.0.4
