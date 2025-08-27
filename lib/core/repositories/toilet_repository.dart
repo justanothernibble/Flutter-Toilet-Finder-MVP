@@ -29,6 +29,12 @@ abstract class ToiletRepository {
     List<String>? accessibilityFeatures,
     Map<String, dynamic>? operatingHours,
   });
+  Future<List<Toilet>> fetchNearby({
+    required double lat,
+    required double lng,
+    int radiusM,
+    int limit,
+  });
 }
 
 class SupabaseToiletRepository implements ToiletRepository {
@@ -118,5 +124,26 @@ class SupabaseToiletRepository implements ToiletRepository {
       },
     );
     return Toilet.fromMap(Map<String, dynamic>.from(res));
+  }
+
+  @override
+  Future<List<Toilet>> fetchNearby({
+    required double lat,
+    required double lng,
+    int radiusM = 1500,
+    int limit = 100,
+  }) async {
+    final data = await _client.rpc(
+      'fn_toilets_nearby',
+      params: {
+        'p_lat': lat,
+        'p_lng': lng,
+        'p_radius_m': radiusM,
+        'p_limit': limit,
+      },
+    );
+    return (data as List)
+        .map((e) => Toilet.fromMap(Map<String, dynamic>.from(e)))
+        .toList();
   }
 }

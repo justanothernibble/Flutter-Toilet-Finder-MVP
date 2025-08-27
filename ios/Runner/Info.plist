@@ -47,5 +47,9 @@
 	<true/>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>We use your location to show nearby public toilets.</string>
+	<key>io.flutter.embedded_views_preview</key>
+	<true/>
+	<key>GMSApiKey</key>
+	<string>$(GMS_API_KEY)</string>
 </dict>
 </plist>

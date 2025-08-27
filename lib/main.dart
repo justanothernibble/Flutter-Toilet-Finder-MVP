@@ -2,10 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
 
 import 'config/theme/app_theme.dart';
 import 'core/services/supabase_service.dart';
 import 'core/utils/logger.dart';
+import 'core/repositories/toilet_repository.dart';
+import 'core/models/toilet.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -13,24 +18,25 @@ Future<void> main() async {
   // Load environment variables
   await dotenv.load();
 
-  // Initialize Supabase via service
-  await SupabaseService().initialize(
-    url: dotenv.env['SUPABASE_URL'],
-    anonKey: dotenv.env['SUPABASE_ANON_KEY'],
-  );
-
   // Initialize logging
   Logger.init();
 
+  // Initialize Supabase via service (with validation and friendly error)
   try {
-    runApp(const ProviderScope(child: MyApp()));
+    await SupabaseService().initialize(
+      url: dotenv.env['SUPABASE_URL'],
+      anonKey: dotenv.env['SUPABASE_ANON_KEY'],
+    );
   } catch (e) {
     runApp(
       MaterialApp(
-        home: Scaffold(body: Center(child: Text('Error: $e'))),
+        home: Scaffold(body: Center(child: Text('Supabase config error: $e'))),
       ),
     );
+    return;
   }
+
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 class MyApp extends ConsumerWidget {
@@ -49,15 +55,171 @@ class MyApp extends ConsumerWidget {
   }
 }
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  final MapController _mapController = MapController();
+  LatLng _center = const LatLng(51.5074, -0.1278); // London default
+  bool _loading = true;
+  String? _error;
+  List<Toilet> _toilets = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      // Ensure permissions
+      LocationPermission perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+      }
+
+      Position? pos;
+      if (perm != LocationPermission.denied &&
+          perm != LocationPermission.deniedForever) {
+        pos = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
+        );
+      }
+
+      if (pos != null) {
+        _center = LatLng(pos.latitude, pos.longitude);
+      }
+
+      final repo = SupabaseToiletRepository(SupabaseService());
+      final fetched = await repo.fetchNearby(
+        lat: _center.latitude,
+        lng: _center.longitude,
+        radiusM: 1500,
+        limit: 100,
+      );
+      if (!mounted) return;
+      setState(() {
+        _toilets = fetched;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.toString();
+      });
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+      });
+    }
+  }
+
+  List<Marker> _buildMarkers() {
+    return _toilets
+        .map(
+          (t) => Marker(
+            point: LatLng(
+              t.lat ?? _center.latitude,
+              t.lng ?? _center.longitude,
+            ),
+            width: 40,
+            height: 40,
+            child: GestureDetector(
+              onTap: () => _showToiletDetails(t),
+              child: const Icon(
+                Icons.location_on,
+                size: 36,
+                color: Colors.redAccent,
+              ),
+            ),
+          ),
+        )
+        .toList();
+  }
+
+  void _showToiletDetails(Toilet t) {
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              t.name ?? 'Toilet',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            if (t.address != null) ...[
+              const SizedBox(height: 8),
+              Text(t.address!),
+            ],
+            if ((t.description ?? '').isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(t.description!),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Toilet Finder London')),
-      body: const Center(
-        child: Text('Welcome! Map & toilets will appear here.'),
+      appBar: AppBar(
+        title: const Text('Toilet Finder London'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loading ? null : _load,
+            tooltip: 'Refresh',
+          ),
+        ],
+      ),
+      body: _error != null
+          ? Center(child: Text('Error: $_error'))
+          : Stack(
+              children: [
+                FlutterMap(
+                  mapController: _mapController,
+                  options: MapOptions(initialCenter: _center, initialZoom: 14),
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                          'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      userAgentPackageName: 'com.example.toilet_finder',
+                    ),
+                    MarkerLayer(markers: _buildMarkers()),
+                  ],
+                ),
+                if (_loading)
+                  const Align(
+                    alignment: Alignment.topCenter,
+                    child: Padding(
+                      padding: EdgeInsets.all(8),
+                      child: LinearProgressIndicator(),
+                    ),
+                  ),
+              ],
+            ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _loading
+            ? null
+            : () async {
+                await _load();
+                _mapController.move(_center, 14);
+              },
+        child: const Icon(Icons.my_location),
       ),
     );
   }

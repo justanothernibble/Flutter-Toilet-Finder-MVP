@@ -15,13 +15,24 @@ class SupabaseService {
 
   Future<void> initialize({String? url, String? anonKey}) async {
     try {
+      final rawUrl = (url ?? const String.fromEnvironment('SUPABASE_URL', defaultValue: '')).trim();
+      final rawKey = (anonKey ?? const String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: '')).trim();
+
+      if (rawUrl.isEmpty || rawKey.isEmpty) {
+        throw Exception('Missing SUPABASE_URL or SUPABASE_ANON_KEY in .env');
+      }
+
+      final parsed = Uri.tryParse(rawUrl);
+      if (parsed == null || !parsed.hasScheme || parsed.scheme != 'https') {
+        throw Exception('SUPABASE_URL must be a valid https URL, got: $rawUrl');
+      }
+      if ((parsed.host.isEmpty) || !parsed.host.endsWith('supabase.co')) {
+        throw Exception('SUPABASE_URL host must end with supabase.co, got: ${parsed.host}');
+      }
+
       await Supabase.initialize(
-        url:
-            url ??
-            const String.fromEnvironment('SUPABASE_URL', defaultValue: ''),
-        anonKey:
-            anonKey ??
-            const String.fromEnvironment('SUPABASE_ANON_KEY', defaultValue: ''),
+        url: rawUrl,
+        anonKey: rawKey,
       );
       _client = Supabase.instance.client;
       Logger.i('Supabase initialized successfully');

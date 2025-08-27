@@ -5,6 +5,10 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Load env for Android GMS API KEY
+def dotenv = new Properties()
+file("../../.env").withInputStream { dotenv.load(it) }
+
 android {
     namespace = "com.example.flutter_toilet_finder_mvp"
     compileSdk = flutter.compileSdkVersion
@@ -28,6 +32,10 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        // Load env for Android GMS API KEY
+        manifestPlaceholders = [
+            GOOGLE_MAPS_API_KEY: dotenv['ANDROID_MAPS_API_KEY']
+        ]
     }
 
     buildTypes {
