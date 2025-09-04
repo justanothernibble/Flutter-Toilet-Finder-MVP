@@ -1,4 +1,4 @@
-import 'package:latlong2/latlong.dart';
+// latlong2 removed: model now exposes primitive doubles only for coordinates.
 
 /// Enum mapping for the database enum `public.toilet_type`.
 /// Keep string values in sync with the DB.
@@ -90,41 +90,40 @@ class Toilet {
     this.lastVerifiedAt,
   });
 
-  /// Try to convert `locationRaw` to LatLng if possible.
-  /// Supports direct lat/lng, GeoJSON Point, or WKT POINT.
-  LatLng? get latLng {
-    // 1) Direct lat/lng from API/view
+  /// Returns coordinates from either explicit lat/lng fields or by parsing locationRaw.
+  _LatLngPair? _computeLatLng() {
+    // 1) Preferred fields supplied by API/view
     if (lat != null && lng != null) {
-      return LatLng(lat!, lng!);
+      return _LatLngPair(lat!, lng!);
     }
 
     if (locationRaw == null) return null;
 
-    // 2) GeoJSON
+    // 2) GeoJSON Point { type: 'Point', coordinates: [lng, lat] }
     if (locationRaw is Map) {
       final map = Map<String, dynamic>.from(locationRaw as Map);
       final type = map['type'];
       final coords = map['coordinates'];
       if (type == 'Point' && coords is List && coords.length >= 2) {
-        final lng = _asDouble(coords[0]);
-        final lat = _asDouble(coords[1]);
-        if (lat != null && lng != null) {
-          return LatLng(lat, lng);
+        final lngVal = _asDouble(coords[0]);
+        final latVal = _asDouble(coords[1]);
+        if (latVal != null && lngVal != null) {
+          return _LatLngPair(latVal, lngVal);
         }
       }
     }
 
-    // 3) WKT
+    // 3) WKT string: POINT(lng lat)
     if (locationRaw is String) {
       final wkt = locationRaw as String;
       final match = RegExp(
         r'POINT\\s*\\(([-0-9.]+)\\s+([-0-9.]+)\\)',
       ).firstMatch(wkt.toUpperCase());
       if (match != null && match.groupCount == 2) {
-        final lng = double.tryParse(match.group(1)!);
-        final lat = double.tryParse(match.group(2)!);
-        if (lat != null && lng != null) {
-          return LatLng(lat, lng);
+        final lngVal = double.tryParse(match.group(1)!);
+        final latVal = double.tryParse(match.group(2)!);
+        if (latVal != null && lngVal != null) {
+          return _LatLngPair(latVal, lngVal);
         }
       }
     }
@@ -132,8 +131,8 @@ class Toilet {
     return null;
   }
 
-  double? get latitude => latLng?.latitude;
-  double? get longitude => latLng?.longitude;
+  double? get latitude => lat ?? _computeLatLng()?.lat;
+  double? get longitude => lng ?? _computeLatLng()?.lng;
 
   factory Toilet.fromMap(Map<String, dynamic> map) {
     return Toilet(
@@ -183,6 +182,12 @@ class Toilet {
 }
 
 // Helpers
+
+class _LatLngPair {
+  final double lat;
+  final double lng;
+  const _LatLngPair(this.lat, this.lng);
+}
 
 double? _asDouble(dynamic v) {
   if (v == null) return null;
