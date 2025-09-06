@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_toilet_finder_mvp/pages/list_toilets_temp.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 
@@ -137,6 +138,17 @@ class _HomeScreenState extends State<HomeScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const ListToilets()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.transform_rounded),
+              title: const Text('List View (Temporary)'),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ListToiletsTemp()),
                 );
               },
             ),
