@@ -142,7 +142,7 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.transform_rounded),
+              leading: const Icon(Icons.list_alt),
               title: const Text('List View (Temporary)'),
               onTap: () {
                 Navigator.pop(context);
@@ -203,6 +203,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
               ],
             ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.miniStartFloat,
       floatingActionButton: FloatingActionButton(
         onPressed: _loading
             ? null

@@ -49,7 +49,7 @@ class SupabaseToiletRepository implements ToiletRepository {
 
   @override
   Future<List<Toilet>> fetchAll() async {
-    final data = await _client.from('v_toilets_public').select('*');
+    final data = await _client.from('toilets').select('*');
     return (data as List)
         .map((e) => Toilet.fromMap(Map<String, dynamic>.from(e)))
         .toList();
@@ -58,7 +58,7 @@ class SupabaseToiletRepository implements ToiletRepository {
   @override
   Future<Toilet?> getById(String id) async {
     final data = await _client
-        .from('v_toilets_public')
+        .from('toilets')
         .select('*')
         .eq('id', id)
         .maybeSingle();

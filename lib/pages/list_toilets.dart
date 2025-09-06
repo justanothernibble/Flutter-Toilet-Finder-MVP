@@ -3,7 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_toilet_finder_mvp/pages/list_toilets_temp.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../core/services/supabase_service.dart';
@@ -133,11 +132,24 @@ class _ListToiletsState extends ConsumerState<ListToilets> {
     });
   }
 
+  Position? examplePos;
+
   @override
   Widget build(BuildContext context) {
     final toiletState = ref.watch(toiletListProvider);
-    final tempBody = false;
-
+    examplePos = Position(
+      // temporary location for testing
+      latitude: 51.4994,
+      longitude: -0.1247,
+      accuracy: 10.0,
+      altitude: 0.0,
+      heading: 0.0,
+      speed: 0.0,
+      speedAccuracy: 0.0,
+      timestamp: DateTime.now(),
+      altitudeAccuracy: 0.0,
+      headingAccuracy: 0.0,
+    );
     return Scaffold(
       drawer: Drawer(
         child: ListView(
@@ -162,7 +174,7 @@ class _ListToiletsState extends ConsumerState<ListToilets> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.transform_rounded),
+              leading: const Icon(Icons.list_alt),
               title: const Text('List View (Temporary)'),
               onTap: () {
                 Navigator.pop(context);
@@ -199,22 +211,7 @@ class _ListToiletsState extends ConsumerState<ListToilets> {
           ),
         ],
       ),
-      body: tempBody
-          ? Column(
-              children: [
-                Center(
-                  child: Text(
-                    'Temp Body. The purpose of this is to test an alternative to loading the toilet list',
-                  ),
-                ),
-                ElevatedButton(
-                  onPressed: () =>
-                      ref.read(toiletListProvider.notifier).loadToilets(),
-                  child: const Text('Load Toilets'),
-                ),
-              ],
-            )
-          : toiletState.isLoading
+      body: toiletState.isLoading
           ? const Center(child: CircularProgressIndicator())
           : toiletState.error != null
           ? Center(
@@ -237,7 +234,7 @@ class _ListToiletsState extends ConsumerState<ListToilets> {
               itemCount: toiletState.toilets.length,
               itemBuilder: (context, index) {
                 final toilet = toiletState.toilets[index];
-                final distance = toiletState.currentLocation != null
+                /*                final distance = toiletState.currentLocation != null
                     ? Geolocator.distanceBetween(
                         toiletState.currentLocation!.latitude,
                         toiletState.currentLocation!.longitude,
@@ -245,6 +242,14 @@ class _ListToiletsState extends ConsumerState<ListToilets> {
                             toiletState.currentLocation!.latitude,
                         toilet.longitude ??
                             toiletState.currentLocation!.longitude,
+                      )
+                    : 0.0;*/
+                final distance = toiletState.currentLocation != null
+                    ? Geolocator.distanceBetween(
+                        examplePos!.latitude,
+                        examplePos!.longitude,
+                        toilet.latitude ?? examplePos!.latitude,
+                        toilet.longitude ?? examplePos!.longitude,
                       )
                     : 0.0;
 
